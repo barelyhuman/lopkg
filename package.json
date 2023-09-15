@@ -1,5 +1,6 @@
 {
   "name": "lopkg",
+  "description": "A simpler node package manager installer",
   "type": "module",
   "version": "0.1.1",
   "main": "index.js",
@@ -10,6 +11,9 @@
   "engines": {
     "node": ">=18"
   },
+  "files": [
+    "src"
+  ],
   "keywords": [],
   "author": "",
   "license": "MIT",
