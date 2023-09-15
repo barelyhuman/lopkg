@@ -1,5 +1,5 @@
 {
-  "name": "pkgman",
+  "name": "lopkg",
   "type": "module",
   "version": "0.1.1",
   "main": "index.js",
