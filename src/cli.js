@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { Yarn } from "./lib/yarn.js";
 
 await Yarn.fetchVersionTar();
