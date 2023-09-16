@@ -62,7 +62,7 @@ async function createAlias(version = "1.22.19") {
   const write$ = createWriteStream("./pm.cjs");
   write$.write(`#!/usr/bin/env node\n`);
   write$.write(`require("${filePath}")`);
-  write$.on("end", () => {
+  write$.on("close", () => {
     resolve();
   });
   write$.end();

@@ -17,7 +17,17 @@ async function fetchVersionTar(version = "latest") {
   const getVersions = await fetch("https://registry.npmjs.org/pnpm").then((x) =>
     x.json()
   );
-  const resolvedVersion = getVersions["dist-tags"][version];
+
+  let resolvedVersion = version;
+
+  if (!getVersions.versions[resolvedVersion]) {
+    resolvedVersion = getVersions["dist-tags"][resolvedVersion];
+  }
+
+  if (!resolvedVersion) {
+    throw new Error("Invalid version provided for pnpm");
+  }
+
   const tarURL = getVersions.versions[resolvedVersion].dist.tarball;
 
   const response = await fetch(tarURL)
@@ -63,13 +73,38 @@ async function extractVersionTar(version = "") {
 }
 
 async function createAlias(version) {
-  const { resolve, promise } = withResolve();
+  await _createAliasPM(version);
+  await _createAliasPMX(version);
+}
+
+function _createAliasPM(version) {
+  const { resolve, reject, promise } = withResolve();
   const filePath = join(getProjectPath(), version, "pnpm/bin/pnpm.cjs");
+
   const write$ = createWriteStream("./pm.cjs");
   write$.write(`#!/usr/bin/env node\n`);
   write$.write(`require("${filePath}")`);
-  write$.on("end", () => {
+  write$.on("close", () => {
     resolve();
+  });
+  write$.on("error", (err) => {
+    reject(err);
+  });
+  write$.end();
+  return promise;
+}
+
+function _createAliasPMX(version) {
+  const { resolve, promise, reject } = withResolve();
+  const filePath = join(getProjectPath(), version, "pnpm/bin/pnpx.cjs");
+  const write$ = createWriteStream("./pmx.cjs");
+  write$.write(`#!/usr/bin/env node\n`);
+  write$.write(`require("${filePath}")`);
+  write$.on("close", () => {
+    resolve();
+  });
+  write$.on("error", (err) => {
+    reject(err);
   });
   write$.end();
   return promise;
