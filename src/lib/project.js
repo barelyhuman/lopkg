@@ -2,7 +2,7 @@ import { join } from "node:path";
 
 import { homedir } from "node:os";
 
-export function getProjectPath() {
-  const projectPath = join(homedir(), ".local-pm");
+export function getProjectPath(pkgMan = "pnpm") {
+  const projectPath = join(homedir(), ".lopkg", pkgMan);
   return projectPath;
 }

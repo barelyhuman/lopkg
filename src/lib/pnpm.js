@@ -6,15 +6,21 @@ import tar from "tar";
 import { getProjectPath } from "./project.js";
 import { withResolve } from "./promises.js";
 
-export const Yarn = {
+export const Pnpm = {
   fetchVersionTar: fetchVersionTar,
   extractVersionTar: extractVersionTar,
   createAlias: createAlias,
 };
 
-async function fetchVersionTar(version = "1.22.19") {
+async function fetchVersionTar(version = "latest") {
   const { promise, resolve } = withResolve();
-  const response = await fetch("http://yarnpkg.com/latest.tar.gz")
+  const getVersions = await fetch("https://registry.npmjs.org/pnpm").then((x) =>
+    x.json()
+  );
+  const resolvedVersion = getVersions["dist-tags"][version];
+  const tarURL = getVersions.versions[resolvedVersion].dist.tarball;
+
+  const response = await fetch(tarURL)
     .then((x) => {
       if (!x.ok) {
         throw x;
@@ -26,13 +32,15 @@ async function fetchVersionTar(version = "1.22.19") {
     });
 
   const arrayBuff = await response.arrayBuffer();
-  const writePath = join(getProjectPath("yarn"), version, "yarn.tar.gz");
+  const writePath = join(getProjectPath(), resolvedVersion, "pnpm.tar.gz");
   await mkdir(dirname(writePath), { recursive: true });
   const write$ = createWriteStream(writePath, "binary");
   write$.write(Buffer.from(arrayBuff));
 
   write$.on("close", () => {
-    resolve();
+    resolve({
+      version: resolvedVersion,
+    });
   });
 
   write$.end();
@@ -40,9 +48,9 @@ async function fetchVersionTar(version = "1.22.19") {
   return promise;
 }
 
-async function extractVersionTar(version = "1.22.19") {
-  const filePath = join(getProjectPath("yarn"), version, "yarn.tar.gz");
-  const extractTo = join(dirname(filePath), "yarn");
+async function extractVersionTar(version = "") {
+  const filePath = join(getProjectPath(), version, "pnpm.tar.gz");
+  const extractTo = join(dirname(filePath), "pnpm");
   await mkdir(extractTo, { recursive: true });
   await tar.x(
     {
@@ -54,11 +62,9 @@ async function extractVersionTar(version = "1.22.19") {
   );
 }
 
-async function createAlias(version = "1.22.19") {
+async function createAlias(version) {
   const { resolve, promise } = withResolve();
-
-  const filePath = join(getProjectPath("yarn"), version, "yarn/bin/yarn.js");
-
+  const filePath = join(getProjectPath(), version, "pnpm/bin/pnpm.cjs");
   const write$ = createWriteStream("./pm.cjs");
   write$.write(`#!/usr/bin/env node\n`);
   write$.write(`require("${filePath}")`);
